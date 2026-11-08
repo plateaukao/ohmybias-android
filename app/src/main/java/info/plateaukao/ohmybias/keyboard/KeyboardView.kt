@@ -36,9 +36,10 @@ class KeyboardView(context: Context) : ViewGroup(context) {
         set(value) {
             if (field == value) return
             field = value
+            shiftState.reset()
             reloadKeys()
         }
-    var isShifted = false
+    internal val shiftState = ShiftState()
     var needsInputModeSwitchKey = true
     /// Enter 鍵顯示文字（依 host app 的 imeOptions：搜尋/前往/送出…）
     var returnKeyLabel = "⏎"
@@ -388,7 +389,7 @@ class KeyboardView(context: Context) : ViewGroup(context) {
         val r2 = "asdfghjkl".map { it.toString() }
         val r3 = "zxcvbnm".map { it.toString() }
         // 鍵面大寫：英文模式看 shift；中文模式看偏好（字根表慣用大寫）。action 一律小寫碼
-        val uppercase = if (isEnglishMode) isShifted else Prefs.uppercaseLettersInChinese
+        val uppercase = if (isEnglishMode) shiftState.isShifted else Prefs.uppercaseLettersInChinese
         fun key(s: String): KeySpec = KeySpec(
             label = if (uppercase) s.uppercase() else s,
             action = KeyAction.Letter(s),
@@ -399,7 +400,8 @@ class KeyboardView(context: Context) : ViewGroup(context) {
         // 第三排前導鍵（sweetlime 版面）：中文模式＝「英」切換鍵（shift 位置）、英文模式＝shift
         val row3 = mutableListOf<KeySpec>()
         if (isEnglishMode) {
-            row3.add(KeySpec(if (isShifted) "⬆" else "⇧", KeyAction.Shift, isSpecial = true))
+            val shiftLabel = if (shiftState.isCapsLocked) "⇪" else if (shiftState.isShifted) "⬆" else "⇧"
+            row3.add(KeySpec(shiftLabel, KeyAction.Shift, isSpecial = true))
         } else {
             row3.add(KeySpec("英", KeyAction.ToggleLanguage, isSpecial = true))
         }
@@ -623,10 +625,11 @@ class KeyButton(
                     repeatRunnable = rep
                     handler2.postDelayed(rep, 400)
                 }
-                if (spec.longPress != null) {
+                if (spec.longPress != null || spec.action is KeyAction.Shift) {
                     val lp = Runnable {
                         isInLongPress = true
-                        host.showPopup(this)
+                        if (spec.action is KeyAction.Shift) host.onKey?.invoke(KeyAction.CapsLock)
+                        else host.showPopup(this)
                     }
                     longPressRunnable = lp
                     handler2.postDelayed(lp, 400)

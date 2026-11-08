@@ -9,6 +9,7 @@ sealed class KeyAction {
     object Newline : KeyAction()
     object ToggleLanguage : KeyAction()                    // 中 ↔ 英
     object Shift : KeyAction()                             // 英文模式大寫
+    object CapsLock : KeyAction()
     data class Page(val page: KeyboardView.PageKind) : KeyAction()
     data class ToggleToolbarPage(val page: KeyboardView.PageKind) : KeyAction()
     data class ZhuyinSymbol(val zy: String) : KeyAction()

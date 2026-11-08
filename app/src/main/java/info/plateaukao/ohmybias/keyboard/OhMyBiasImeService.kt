@@ -623,6 +623,7 @@ class OhMyBiasImeService : InputMethodService(), InputEngineDelegate, HardwareKe
     }
 
     private fun handleKey(action: KeyAction) {
+        if (action !is KeyAction.Shift) keyboardView?.shiftState?.interruptTapSequence()
         // 觸覺回饋不在這裡給 — 鍵面在按下瞬間經 kv.onHapticDown 震（issue #4）；
         // 工具列等 click 路徑各自呼叫 haptic()
         when (action) {
@@ -640,7 +641,13 @@ class OhMyBiasImeService : InputMethodService(), InputEngineDelegate, HardwareKe
             is KeyAction.Page -> keyboardView?.showPage(action.page)
             is KeyAction.ToggleToolbarPage -> keyboardView?.toggleToolbarPage(action.page)
             is KeyAction.Shift -> {
-                keyboardView?.let { it.isShifted = !it.isShifted; it.reloadKeys() }
+                keyboardView?.let {
+                    it.shiftState.tap(android.os.SystemClock.uptimeMillis(), android.view.ViewConfiguration.getDoubleTapTimeout().toLong())
+                    it.reloadKeys()
+                }
+            }
+            is KeyAction.CapsLock -> {
+                keyboardView?.let { it.shiftState.lock(); it.reloadKeys() }
             }
             is KeyAction.ZhuyinSymbol -> engine.handleZhuyinSymbol(action.zy)
             is KeyAction.ZhuyinTone -> engine.handleZhuyinTone(action.tone)
@@ -827,10 +834,10 @@ class OhMyBiasImeService : InputMethodService(), InputEngineDelegate, HardwareKe
 
     private fun handleLetterKey(ch: String) {
         if (engine.isEnglishMode) {
-            val shifted = keyboardView?.isShifted == true
+            val shifted = keyboardView?.shiftState?.isShifted == true
             val out = if (shifted) ch.uppercase() else ch
-            if (shifted) {
-                keyboardView?.isShifted = false
+            if (shifted && keyboardView?.shiftState?.isCapsLocked != true) {
+                keyboardView?.shiftState?.consume()
                 keyboardView?.reloadKeys()
             }
             commitToEditor(out)
