@@ -1,4 +1,6 @@
-0.6.2 — snappier & adjustable haptics, roomier settings
-• Key vibration now fires the moment your finger touches down, not on release (#4)
-• New "Vibration strength" slider in Settings: 0 = system default, slide right for a stronger buzz
-• Settings toggles spaced further apart with larger touch targets to avoid mis-taps
+0.6.3 — Caps Lock and phrase backups
+• Double-tap or hold Shift in English mode for Caps Lock; tap again to unlock
+• Export and import custom phrase backups
+• Fix phrase editor content hidden by system bars or the keyboard
+• Default to Chinese on first launch and after importing a character table
+• Remove frequency learning; preserve explicit candidate pinning in pinned.txt (existing pins must be set again)
